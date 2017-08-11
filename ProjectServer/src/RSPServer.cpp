@@ -9,21 +9,26 @@
 #include "LoginHandler.h"
 namespace networkingLab {
 
-RSPServer::RSPServer() {
+RSPServer::RSPServer(int port) {
 	// TODO Auto-generated constructor stub
+	 this->port=port;
 
 }
 
 void RSPServer::runServer() {
-	TCPSocket* loginSocket=new TCPSocket(PORT);
-	lh=new LoginHandler(loginSocket,this->usersVector);
-	lh->start();
 
+	TCPSocket* loginSocket=new TCPSocket(this->port);
+	lh=new LoginHandler(loginSocket,&this->usersVector);
+	lh->start();
+	sleep(2);
+
+	//this->sh=new ConnectedSocketsHandler(this->usersVector);
 }
 
 RSPServer::~RSPServer() {
 	// TODO Auto-generated destructor stub
 	lh->stop();
+
 }
 
 } /* namespace networkingLab */

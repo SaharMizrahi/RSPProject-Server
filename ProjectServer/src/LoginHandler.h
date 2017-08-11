@@ -15,12 +15,12 @@
 #include "File.h"
 #include <iostream>
 #include <fstream>
+
 using namespace std;
 namespace networkingLab {
 
 class LoginHandler : public MThread{
-	ifstream in;
-	ofstream out;
+
 	bool stopFlag;
 	vector<TCPSocket*>* socketVector;
 	TCPSocket* socket;

@@ -9,6 +9,7 @@
 #include<string.h>
 #include <fstream>
 #include <iostream>
+#include "File.h"
 namespace networkingLab {
 
 
@@ -24,31 +25,22 @@ void LoginHandler::run() {
 	char buffer[100]={0};
 	int size;
 	//waiting for new client to connect
-
 	do{
 	TCPSocket* readySocket=this->socket->listenAndAccept();
 	//Authenticate client
 	if(readySocket!=NULL)
 	{
+		cout<<"new client connected"<<endl;
 		bool isAuthentic=false;
 		int chances=0;
 
 		//read username and password
 		readySocket->read((char*)&size, 4);
 		readySocket->read(buffer,ntohl(size));
-		int i=0;
-		while(buffer[i]!=' '||buffer[i]!='\0')//get username
-		{
-			i++;
-		}
-		char* username=strncpy(username,buffer,i);
-		int j=i+2;
-		while(buffer[j]!=' '||buffer[j]!='\0')//get password
-		{
-			j++;
-		}
-		char* password=strncpy(password,buffer+i+1,j);
+		char* username=strtok(buffer," ");
+		char* password=strtok(NULL," ");
 		int checkResult=checkUser(username, password);
+		cout<<"check:"<<checkResult<<endl;
 		switch (checkResult)
 		{
 		case 0://username+password is valid
@@ -82,13 +74,37 @@ LoginHandler::LoginHandler(TCPSocket* listeningSocket,vector<TCPSocket*>* Vector
 }
 
 int LoginHandler::checkUser(char* username, char* password) {
-	string line;
+	ifstream in ("src/users.txt");
 
-	in.open("/files/users.txt");
-	//check if username exist
-	while(!in.eof())//while not end of file
+	string line;
+	if(in.is_open())
 	{
-		in>>line;
+		while(getline(in,line))
+		{
+			const char* s=line.c_str();
+			char* str=new char[line.length()+1];
+			strcpy(str,s);
+			char* username=strtok(str," ");
+			char* password=strtok(NULL," ");
+			cout<<"username: "<<username<<" pass: "<<password<<endl;
+		}
+
+		in.close();
+		return 2;
+	}
+	else
+		return 1;
+	/*string line;
+	ifstream in ("/files/users.txt");
+	in.open("/files/users.txt");
+	if(in.is_open())
+	{
+	//check if username exist
+	while(in.good())//while not end of file
+	{
+		getline(in,line);
+		cout<<"line: "<<line<<endl;
+		sleep(5);
 		if(strcmp(username,line.c_str())==0)//we found the username
 		{
 			in>>line;//read the username's password
@@ -108,11 +124,13 @@ int LoginHandler::checkUser(char* username, char* password) {
 	}
 	in.close();
 	//if not exist,add username+password to file
+	ofstream out ("/files/users.txt");
 	out.open("/files/users.txt");
 	out<<username<<" "<<password<<" ";
 	out.close();
+	}
+	 */
 
-	return 2;
 }
 
 void LoginHandler::stop() {
@@ -122,7 +140,7 @@ void LoginHandler::stop() {
 
 LoginHandler::~LoginHandler() {
 	// TODO Auto-generated destructor stub
-
+this->socket->close();
 }
 
 } /* namespace networkingLab */

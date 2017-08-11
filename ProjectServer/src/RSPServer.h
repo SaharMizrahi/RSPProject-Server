@@ -7,7 +7,7 @@
 
 #ifndef SRC_RSPSERVER_H_
 #define SRC_RSPSERVER_H_
-#define PORT 9999
+
 #include<iostream>
 #include<stdio.h>
 #include "TCPSocket.h"
@@ -15,18 +15,21 @@
 #include "MThread.h"
 #include "LoginHandler.h"
 #include <vector>
+#include "MultipleTCPSocketsListener.h"
+#include "ConnectedSocketsHandler.h"
 using namespace std;
 namespace networkingLab {
 
 
 class RSPServer {
 private:
+	int port;
 	LoginHandler *lh;
-	vector<TCPSocket*>* usersVector;
-
+	vector<TCPSocket*> usersVector;
+	ConnectedSocketsHandler* sh;
 public:
 	void runServer();
-	RSPServer();
+	RSPServer(int port);
 	virtual ~RSPServer();
 };
 
