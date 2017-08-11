@@ -15,7 +15,16 @@
 #include "File.h"
 #include <iostream>
 #include <fstream>
-
+/**
+ * PROTOCOL:
+ * -2 can't open file
+ * -1 wrong command
+ * 0 login request approved
+ * 1 login-password mistake
+ * 2 login-username not exist
+ * 3 register request approved
+ * 4 register-username already exist
+ */
 using namespace std;
 namespace networkingLab {
 
@@ -24,7 +33,7 @@ class LoginHandler : public MThread{
 	bool stopFlag;
 	vector<TCPSocket*>* socketVector;
 	TCPSocket* socket;
-	int checkUser(char * username,char* password);
+	int checkUser(char* cmd,char * username,char* password);
 public:
 	void stop();
 	virtual void run();

@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iostream>
 #include "File.h"
+
 namespace networkingLab {
 
 
@@ -24,8 +25,35 @@ void LoginHandler::run() {
 	int userRegSize=htonl(sizeof(userReg));
 	char buffer[100]={0};
 	int size;
+	TCPSocket* readySock;
+	while(!stopFlag&&(readySock=socket->listenAndAccept())!=NULL)
+	{
+		//read msg from new client
+		readySock->read((char*)&size, 4);
+		readySock->read(buffer,ntohl(size));
+		//define if it's login or register
+		char* cmd=strtok(buffer," ");
+		//get details
+		char* username=strtok(NULL," ");
+		char* password=strtok(NULL," ");
+		if(strcmp(cmd,"login")!=0&&strcmp(cmd,"register")!=0)
+		{
+			char* msg1="-1";
+			int size=htonl(sizeof(msg1));
+			readySock->write((char*)&size, 4);
+			readySock->write(msg1, size);
+		}
+		else
+		{
+			int res=checkUser(cmd, username, password);
+			cout<<"result: "<<res<<endl;
+
+		}
+
+
+	}
 	//waiting for new client to connect
-	do{
+	/*do{
 	TCPSocket* readySocket=this->socket->listenAndAccept();
 	//Authenticate client
 	if(readySocket!=NULL)
@@ -63,7 +91,7 @@ void LoginHandler::run() {
 		}
 
 	}
-	}while(!stopFlag);
+	}while(!stopFlag);*/
 }
 
 LoginHandler::LoginHandler(TCPSocket* listeningSocket,vector<TCPSocket*>* Vector) {
@@ -73,63 +101,91 @@ LoginHandler::LoginHandler(TCPSocket* listeningSocket,vector<TCPSocket*>* Vector
 
 }
 
-int LoginHandler::checkUser(char* username, char* password) {
-	ifstream in ("src/users.txt");
+int LoginHandler::checkUser(char* cmd,char* username, char* password) {
 
+
+	ifstream in("src/users.txt");
 	string line;
 	if(in.is_open())
 	{
-		while(getline(in,line))
-		{
-			const char* s=line.c_str();
-			char* str=new char[line.length()+1];
-			strcpy(str,s);
-			char* username=strtok(str," ");
-			char* password=strtok(NULL," ");
-			cout<<"username: "<<username<<" pass: "<<password<<endl;
-		}
 
-		in.close();
-		return 2;
-	}
-	else
-		return 1;
-	/*string line;
-	ifstream in ("/files/users.txt");
-	in.open("/files/users.txt");
-	if(in.is_open())
-	{
-	//check if username exist
-	while(in.good())//while not end of file
-	{
-		getline(in,line);
-		cout<<"line: "<<line<<endl;
-		sleep(5);
-		if(strcmp(username,line.c_str())==0)//we found the username
+		if(strcmp(cmd,"login")==0)
 		{
-			in>>line;//read the username's password
-			if(strcmp(password,line.c_str())==0)
+			while(getline(in,line)&&strcmp(line.c_str(),"")!=0)
 			{
-				return 0;
+
+
+				const char* s=line.c_str();
+				char* str=new char[line.length()+1];
+				strcpy(str,s);
+				char* u=strtok(str," ");
+				char* p=strtok(NULL," ");
+				if(strcmp(u,username)==0)
+				{
+					if(strcmp(p,password)==0)
+					{
+						in.close();
+						return 0;
+					}
+					else
+					{
+						in.close();
+						return 1;
+					}
+				}
+
+
+			}
+			return 2;
+		}
+		else if(strcmp(cmd,"register")==0)
+		{
+
+			while(getline(in,line)&&strcmp(line.c_str(),"")!=0)
+			{
+				const char* s=line.c_str();
+				char* str=new char[line.length()+1];
+				strcpy(str,s);
+				char* u=strtok(str," ");
+				char* p=strtok(NULL," ");
+				if(strcmp(u,username)==0)
+				{
+					return 4;
+				}
+
+			}
+
+
+
+			if(in.is_open())
+			{
+				in.close();
+				char buffer[100];
+				strcat(buffer,username);
+				strcat(buffer," ");
+				strcat(buffer,password);
+				ofstream out ("src/users.txt");
+				out.write(buffer,sizeof(buffer));
+				out.close();
+				return 3;
+
+
+
 			}
 			else
 			{
-				return 1;
+				return -2;
 			}
+
 		}
-		else
-		{
-			in>>line;//reading the non-matching username's password
-		}
+
+
+
 	}
-	in.close();
-	//if not exist,add username+password to file
-	ofstream out ("/files/users.txt");
-	out.open("/files/users.txt");
-	out<<username<<" "<<password<<" ";
-	out.close();
-	}
-	 */
+	cout<<"checkdadsda"<<endl;
+
+	return -2;
+
 
 }
 
