@@ -25,7 +25,6 @@ class RSPServer {
 private:
 	int port;
 	LoginHandler *lh;
-	vector<TCPSocket*> usersVector;
 	ConnectedSocketsHandler* sh;
 public:
 	void runServer();

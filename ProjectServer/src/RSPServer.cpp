@@ -18,11 +18,9 @@ RSPServer::RSPServer(int port) {
 void RSPServer::runServer() {
 
 	TCPSocket* loginSocket=new TCPSocket(this->port);
-	lh=new LoginHandler(loginSocket,&this->usersVector);
+	sh=new ConnectedSocketsHandler();
+	lh=new LoginHandler(loginSocket,&this->sh);
 	lh->start();
-	sleep(2);
-
-	//this->sh=new ConnectedSocketsHandler(this->usersVector);
 }
 
 RSPServer::~RSPServer() {

@@ -8,6 +8,7 @@
 #ifndef CONNECTEDSOCKETSHANDLER_H_
 #define CONNECTEDSOCKETSHANDLER_H_
 #include "MThread.h"
+#include "RSPUser.h"
 #include<iostream>
 #include<stdio.h>
 #include <vector>
@@ -18,10 +19,14 @@ namespace networkingLab {
 
 class ConnectedSocketsHandler : public MThread {
 private :
+	bool stop;
 	MultipleTCPSocketsListener* listener;
+	vector<TCPSocket*> serverSockets;
+	vector<RSPUser*> usersVector;
 public:
+	void addClient(char * username,TCPSocket* socket);
 	void run();
-	ConnectedSocketsHandler(vector<TCPSocket*> sockVector);
+	ConnectedSocketsHandler();
 	virtual ~ConnectedSocketsHandler();
 
 };

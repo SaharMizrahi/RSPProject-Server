@@ -14,23 +14,14 @@
 namespace networkingLab {
 
 
-
-void LoginHandler::run() {
-	this->stopFlag=false;
-	char * userAuth=(char*)"access is valid, welcome to RSP server";
-	int userAuthSize=htonl(sizeof(userAuth));
-	char * userFaild=(char*)"somthing is wrong, connect and try again...bye bye";
-	int userFaildSize=htonl(sizeof(userFaild));
-	char* userReg=(char*)"new user has registered";
-	int userRegSize=htonl(sizeof(userReg));
-	char buffer[100]={0};
-	int size;
-	TCPSocket* readySock;
-	while(!stopFlag&&(readySock=socket->listenAndAccept())!=NULL)
+void LoginHandler::handleClient(TCPSocket* sock) {
+	if(sock!=NULL)
 	{
+		int size;
+		char buffer[100];
 		//read msg from new client
-		readySock->read((char*)&size, 4);
-		readySock->read(buffer,ntohl(size));
+		sock->read((char*)&size, 4);
+		sock->read(buffer,ntohl(size));
 		//define if it's login or register
 		char* cmd=strtok(buffer," ");
 		//get details
@@ -40,63 +31,46 @@ void LoginHandler::run() {
 		{
 			char* msg1="-1";
 			int size=htonl(sizeof(msg1));
-			readySock->write((char*)&size, 4);
-			readySock->write(msg1, size);
+			sock->write((char*)&size, 4);
+			sock->write(msg1, size);
 		}
 		else
 		{
 			int res=checkUser(cmd, username, password);
-			cout<<"result: "<<res<<endl;
-
+			int netRes=htonl(res);
+			sock->write((char*)&netRes, 4);
+			switch(res)
+			{
+				case 0://success login
+				case 3://success register
+					this->sockesHandler->addClient(username, sock);
+					break;
+				case -1:
+				case 1:
+				case 2:
+				case 4:
+					sock->close();
+					break;
+			}
 		}
-
-
 	}
-	//waiting for new client to connect
-	/*do{
-	TCPSocket* readySocket=this->socket->listenAndAccept();
-	//Authenticate client
-	if(readySocket!=NULL)
+}
+void LoginHandler::run() {
+	this->stopFlag=false;
+	TCPSocket* readySock;
+	while(!stopFlag&&(readySock=socket->listenAndAccept())!=NULL)
 	{
-		cout<<"new client connected"<<endl;
-		bool isAuthentic=false;
-		int chances=0;
+		this->handleClient(readySock);
 
-		//read username and password
-		readySocket->read((char*)&size, 4);
-		readySocket->read(buffer,ntohl(size));
-		char* username=strtok(buffer," ");
-		char* password=strtok(NULL," ");
-		int checkResult=checkUser(username, password);
-		cout<<"check:"<<checkResult<<endl;
-		switch (checkResult)
-		{
-		case 0://username+password is valid
-			readySocket->write((char*)&userAuthSize, 4);
-			readySocket->write(userAuth, userAuthSize);
-			socketVector->push_back(readySocket);
-			break;
-		case 1://password don't match to username
-			readySocket->write((char*)&userFaildSize, 4);
-			readySocket->write(userFaild, userFaildSize);
-			sleep(2);
-			readySocket->close();
-			break;
-		case 2://registerd new user in new username and password
-			readySocket->write((char*)&userRegSize, 4);
-			readySocket->write(userReg, userRegSize);
-			socketVector->push_back(readySocket);
-			break;
 
-		}
 
 	}
-	}while(!stopFlag);*/
+
 }
 
-LoginHandler::LoginHandler(TCPSocket* listeningSocket,vector<TCPSocket*>* Vector) {
+LoginHandler::LoginHandler(TCPSocket* listeningSocket,ConnectedSocketsHandler** sh) {
 	socket=listeningSocket;
-	socketVector=Vector;
+	this->sockesHandler=*sh;
 	this->stopFlag=true;
 
 }
@@ -167,6 +141,13 @@ int LoginHandler::checkUser(char* cmd,char* username, char* password) {
 				ofstream out ("src/users.txt");
 				out.write(buffer,sizeof(buffer));
 				out.close();
+				ofstream rankOut ("src/rank.txt");
+				char b[100];
+				strcat(b,username);
+				strcat(b," ");
+				strcat(b,"0");
+				rankOut.write(b,sizeof(b));
+				rankOut.close();
 				return 3;
 
 
@@ -182,7 +163,6 @@ int LoginHandler::checkUser(char* cmd,char* username, char* password) {
 
 
 	}
-	cout<<"checkdadsda"<<endl;
 
 	return -2;
 
@@ -193,6 +173,8 @@ void LoginHandler::stop() {
 	this->stopFlag=true;
 	this->waitForThread();
 }
+
+
 
 LoginHandler::~LoginHandler() {
 	// TODO Auto-generated destructor stub

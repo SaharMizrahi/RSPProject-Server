@@ -15,6 +15,7 @@
 #include "File.h"
 #include <iostream>
 #include <fstream>
+#include "ConnectedSocketsHandler.h"
 /**
  * PROTOCOL:
  * -2 can't open file
@@ -31,13 +32,14 @@ namespace networkingLab {
 class LoginHandler : public MThread{
 
 	bool stopFlag;
-	vector<TCPSocket*>* socketVector;
+	ConnectedSocketsHandler* sockesHandler;
 	TCPSocket* socket;
 	int checkUser(char* cmd,char * username,char* password);
 public:
+	void handleClient(TCPSocket* sock);
 	void stop();
 	virtual void run();
-	LoginHandler(TCPSocket* listeningSocket,vector<TCPSocket*>* Vector);
+	LoginHandler(TCPSocket* listeningSocket,ConnectedSocketsHandler** sh);
 	virtual ~LoginHandler();
 };
 
