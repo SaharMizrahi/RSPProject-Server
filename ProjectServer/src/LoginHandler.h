@@ -32,12 +32,17 @@ namespace networkingLab {
 class LoginHandler : public MThread{
 
 	bool stopFlag;
-	ConnectedSocketsHandler* sockesHandler;
+	ConnectedSocketsHandler* socketsHandler;
 	TCPSocket* socket;
+
+	//this method checks if the new client is valid
 	int checkUser(char* cmd,char * username,char* password);
-public:
+	//this method validate the new user and update relevant variables
 	void handleClient(TCPSocket* sock);
+public:
+	//this method stop the thread
 	void stop();
+	//this method listen for incoming client connecting via TCPSocket
 	virtual void run();
 	LoginHandler(TCPSocket* listeningSocket,ConnectedSocketsHandler** sh);
 	virtual ~LoginHandler();

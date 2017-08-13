@@ -10,10 +10,7 @@
 #include <fstream>
 #include <iostream>
 #include "File.h"
-
 namespace networkingLab {
-
-
 void LoginHandler::handleClient(TCPSocket* sock) {
 	if(sock!=NULL)
 	{
@@ -27,29 +24,40 @@ void LoginHandler::handleClient(TCPSocket* sock) {
 		//get details
 		char* username=strtok(NULL," ");
 		char* password=strtok(NULL," ");
-		if(strcmp(cmd,"login")!=0&&strcmp(cmd,"register")!=0)
+		if(strcmp(cmd,"login")!=0&&strcmp(cmd,"register")!=0)//we got wrong command
 		{
 			char* msg1="-1";
 			int size=htonl(sizeof(msg1));
 			sock->write((char*)&size, 4);
 			sock->write(msg1, size);
 		}
-		else
+		else//login / register
 		{
-			int res=checkUser(cmd, username, password);
+			/**
+			 * check if username + password is valid
+			  * PROTOCOL:
+			  * -2 can't open file
+			  * -1 wrong command
+			  * 0 login request approved
+			  * 1 login-password mistake
+			  * 2 login-username not exist
+			  * 3 register request approved
+			  * 4 register-username already exist
+			 */
+			int res=checkUser(cmd, username, password);//
 			int netRes=htonl(res);
-			sock->write((char*)&netRes, 4);
+			sock->write((char*)&netRes, 4);//return to user the result
 			switch(res)
 			{
 				case 0://success login
 				case 3://success register
-					this->sockesHandler->addClient(username, sock);
+					this->socketsHandler->addClient(username, sock);//cliant can play RSP game
 					break;
 				case -1:
 				case 1:
 				case 2:
 				case 4:
-					sock->close();
+					sock->close();//client should re-connect to the server with the right username and password
 					break;
 			}
 		}
@@ -58,7 +66,7 @@ void LoginHandler::handleClient(TCPSocket* sock) {
 void LoginHandler::run() {
 	this->stopFlag=false;
 	TCPSocket* readySock;
-	while(!stopFlag&&(readySock=socket->listenAndAccept())!=NULL)
+	while(!stopFlag&&(readySock=socket->listenAndAccept())!=NULL)//wait for new user to connect
 	{
 		this->handleClient(readySock);
 
@@ -70,25 +78,21 @@ void LoginHandler::run() {
 
 LoginHandler::LoginHandler(TCPSocket* listeningSocket,ConnectedSocketsHandler** sh) {
 	socket=listeningSocket;
-	this->sockesHandler=*sh;
+	this->socketsHandler=*sh;
 	this->stopFlag=true;
 
 }
 
 int LoginHandler::checkUser(char* cmd,char* username, char* password) {
-
-
 	ifstream in("src/users.txt");
 	string line;
 	if(in.is_open())
 	{
-
-		if(strcmp(cmd,"login")==0)
+		if(strcmp(cmd,"login")==0)//this is an exist client
 		{
 			while(getline(in,line)&&strcmp(line.c_str(),"")!=0)
 			{
-
-
+				//get each username and password from users file
 				const char* s=line.c_str();
 				char* str=new char[line.length()+1];
 				strcpy(str,s);
@@ -96,25 +100,23 @@ int LoginHandler::checkUser(char* cmd,char* username, char* password) {
 				char* p=strtok(NULL," ");
 				if(strcmp(u,username)==0)
 				{
-					if(strcmp(p,password)==0)
+					if(strcmp(p,password)==0)//username exist,password match to username
 					{
 						in.close();
 						return 0;
 					}
-					else
+					else//username exist,password don't match
 					{
 						in.close();
 						return 1;
 					}
 				}
-
-
 			}
+			//there isn't user with this username
 			return 2;
 		}
-		else if(strcmp(cmd,"register")==0)
+		else if(strcmp(cmd,"register")==0)//this is a new client
 		{
-
 			while(getline(in,line)&&strcmp(line.c_str(),"")!=0)
 			{
 				const char* s=line.c_str();
@@ -122,15 +124,13 @@ int LoginHandler::checkUser(char* cmd,char* username, char* password) {
 				strcpy(str,s);
 				char* u=strtok(str," ");
 				char* p=strtok(NULL," ");
-				if(strcmp(u,username)==0)
+				if(strcmp(u,username)==0)//there is already an axist user with this username
 				{
 					return 4;
 				}
 
 			}
-
-
-
+			//there isn't user with this username,so we update the users file and register the client
 			if(in.is_open())
 			{
 				in.close();
@@ -138,10 +138,10 @@ int LoginHandler::checkUser(char* cmd,char* username, char* password) {
 				strcat(buffer,username);
 				strcat(buffer," ");
 				strcat(buffer,password);
-				ofstream out ("src/users.txt");
+				ofstream out ("src/users.txt");//update users file
 				out.write(buffer,sizeof(buffer));
 				out.close();
-				ofstream rankOut ("src/rank.txt");
+				ofstream rankOut ("src/rank.txt");//init new user rank with 0
 				char b[100];
 				strcat(b,username);
 				strcat(b," ");
@@ -149,21 +149,13 @@ int LoginHandler::checkUser(char* cmd,char* username, char* password) {
 				rankOut.write(b,sizeof(b));
 				rankOut.close();
 				return 3;
-
-
-
 			}
-			else
+			else//there was error with register the client
 			{
 				return -2;
 			}
-
 		}
-
-
-
 	}
-
 	return -2;
 
 
@@ -179,6 +171,7 @@ void LoginHandler::stop() {
 LoginHandler::~LoginHandler() {
 	// TODO Auto-generated destructor stub
 this->socket->close();
+
 }
 
 } /* namespace networkingLab */

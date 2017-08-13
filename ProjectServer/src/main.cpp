@@ -1,7 +1,7 @@
 #include<iostream>
 #include<stdio.h>
 #include "RSPServer.h"
-#define PORT 6017
+#define PORT 6590
 #define IP "127.0.0.1"
 using namespace std;
 using namespace networkingLab;
@@ -26,10 +26,13 @@ int main() {
 		sleep(2);
 		s=new TCPSocket(IP,ntohl(newPort));
 
-		char buf[]="testing ConnectedSocketsListener";
+		char buf[]="2";
 		int bufSize=htonl(sizeof(buf));
 		s->write((char*)&bufSize, 4);
 		s->write(buf, bufSize);
+		sleep(5);
+		s->read((char*)&bufSize, 4);
+		s->read(buffer, ntohl(bufSize));
 		sleep(4);
 		s->close();
 		break;

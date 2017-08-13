@@ -12,7 +12,8 @@ namespace networkingLab {
 RSPServer::RSPServer(int port) {
 	// TODO Auto-generated constructor stub
 	 this->port=port;
-
+	 sh=NULL;
+	 lh=NULL;
 }
 
 void RSPServer::runServer() {
@@ -26,6 +27,7 @@ void RSPServer::runServer() {
 RSPServer::~RSPServer() {
 	// TODO Auto-generated destructor stub
 	lh->stop();
+
 
 }
 
