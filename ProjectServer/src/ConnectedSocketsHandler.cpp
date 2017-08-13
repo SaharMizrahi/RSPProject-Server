@@ -9,6 +9,7 @@
 #include <fstream>
 #include <string.h>
 #include "RSPUser.h"
+#include "Game.h"
 #include <stdlib.h>     /* srand, rand */
 
 namespace networkingLab {
@@ -39,34 +40,40 @@ void ConnectedSocketsHandler::handleClientMsg(TCPSocket* socket) {
 	char* str=new char[sizeof(buffer)+1];
 	strcpy(str,s);
 	char* cmd=strtok(str," ");
-	cout<<"user cmd: "<<cmd<<endl;
+	if(strcmp(cmd,"")!=0)
+	{
+		if(strcmp(cmd,"1")==0)
+		{
+			this->showUsers(socket);
+		}
+		else if(strcmp(cmd,"2")==0)
+			this->showHS(socket);
+		else if(strcmp(cmd,"3")==0)
+		{
+			char* username=strtok(NULL," ");
+			this->startGame(socket, username);
+		}
+		else if (strcmp(cmd,"4")==0)
+			this->startGame(socket, NULL);
+		else if (strcmp(cmd,"5")==0)
+		{
+			this->setUserAvailable(socket);
+		}
+		else if (strcmp(cmd,"6")==0)
+		{
+			this->setUserUnAvailable(socket);
+		}
+		else if(strcmp(cmd,"7")==0)
+		{
+			this->disconnectUser(socket);
 
-	if(strcmp(cmd,"1")==0)
-	{
-		this->showUsers(socket);
-	}
-	else if(strcmp(cmd,"2")==0)
-		this->showHS(socket);
-	else if(strcmp(cmd,"3")==0)
-	{
-		char* username=strtok(NULL," ");
-		this->startGame(socket, username);
-	}
-	else if (strcmp(cmd,"4")==0)
-		this->startGame(socket, NULL);
-	else if (strcmp(cmd,"5")==0)
-	{
-		this->setUserAvailable(socket);
-	}
-	else if (strcmp(cmd,"6")==0)
-	{
-		this->setUserUnAvailable(socket);
-	}
-	else if(strcmp(cmd,"7")==0)
-	{
-		this->disconnectUser(socket);
-	}
+		}
 
+
+		this->stop=true;
+		this->listener->addSocket(socket);
+		this->stop=false;
+	}
 
 
 
@@ -78,7 +85,9 @@ void ConnectedSocketsHandler::run() {
 	while((sock=this->listener->listenToSocket())!=NULL&&!stop)//wait for incoming msg from connected user
 	{
 		stop=true;
+		this->listener->removeSocket(sock);
 		this->handleClientMsg(sock);
+		stop=false;
 
 
 	}
@@ -162,7 +171,50 @@ void ConnectedSocketsHandler::showUsers(TCPSocket* socket) {
 
 void ConnectedSocketsHandler::startGame(TCPSocket* inviter, char* invitedUser) {
 
-	/*************TODO***************/
+	RSPUser* user1=NULL;
+	RSPUser* user2=NULL;
+	for(int i=0;i<this->usersVector.size();i++)
+	{
+		if(usersVector[i]->getSocket()->getFd()==inviter->getFd())//finding user1
+			user1=usersVector[i];
+		if(invitedUser!=NULL)
+		{
+		if(strcmp(usersVector[i]->getUsername(),invitedUser)==0)//finsing user2
+			user2=usersVector[i];
+
+		}
+		else if(usersVector[i]->getSocket()->getFd()!=inviter->getFd()&&usersVector[i]->isAvailable())//in case of random choice, it has to be not the inviter and also available
+		{
+			user2=usersVector[i];
+
+		}
+
+	}
+	if(user1!=user2)
+	{
+		//need to send udp ports for user1 and user 2 for playing the game
+		user1->setAvailability(false);
+		user2->setAvailability(false);
+		char* msg="ok";
+		int size=htonl(sizeof(msg));
+		user1->getSocket()->write((char*)&size,4);
+		user1->getSocket()->write(msg, size);
+		user2->getSocket()->write((char*)&size,4);
+		user2->getSocket()->write(msg, size);
+		Game* newGame=new Game(user1,user2);
+		newGame->start();
+		return;
+
+	}
+	if(user2==NULL)//we don't found a match or there isn't available user
+	{
+		char * msg="failed";
+		int size=htonl(sizeof(msg));
+		inviter->write((char*)&size, 4);
+		inviter->write(msg, size);
+		return;
+	}
+
 }
 
 
