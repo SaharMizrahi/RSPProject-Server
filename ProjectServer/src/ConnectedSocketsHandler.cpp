@@ -190,12 +190,20 @@ void ConnectedSocketsHandler::startGame(TCPSocket* inviter, char* invitedUser) {
 		}
 
 	}
+	if(user2==NULL)//we don't found a match or there isn't available user
+	{
+		char * msg="failed";
+		int size=htonl(sizeof(msg));
+		inviter->write((char*)&size, 4);
+		inviter->write(msg, size);
+		return;
+	}
 	if(user1!=user2)
 	{
 		//need to send udp ports for user1 and user 2 for playing the game
 		user1->setAvailability(false);
 		user2->setAvailability(false);
-		char* msg="ok";
+		char* msg="start";
 		int size=htonl(sizeof(msg));
 		user1->getSocket()->write((char*)&size,4);
 		user1->getSocket()->write(msg, size);
@@ -206,14 +214,7 @@ void ConnectedSocketsHandler::startGame(TCPSocket* inviter, char* invitedUser) {
 		return;
 
 	}
-	if(user2==NULL)//we don't found a match or there isn't available user
-	{
-		char * msg="failed";
-		int size=htonl(sizeof(msg));
-		inviter->write((char*)&size, 4);
-		inviter->write(msg, size);
-		return;
-	}
+
 
 }
 
