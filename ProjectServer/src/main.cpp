@@ -1,16 +1,27 @@
 #include<iostream>
 #include<stdio.h>
 #include "RSPServer.h"
-#define PORT 6615
+#include "TCPSocket.h"
+#include "RSPGameClient.h"
+#include "RSPGameServer.h"
+#include "MThread.h"
+#include "LoginProtocol.h"
 #define IP "127.0.0.1"
 using namespace std;
 using namespace networkingLab;
 
 int main() {
 
-	RSPServer* server=new RSPServer(PORT);
-	server->runServer();
-	TCPSocket* s=new TCPSocket(IP,PORT);
+	/*RSPServer* server=new RSPServer(SERVER_PORT);
+	server->start();*/
+	RSPGameServer* server=new RSPGameServer(SERVER_PORT);
+	server->start();
+	sleep(1);
+	RSPGameClient *client1=new RSPGameClient("sahar","sahar");
+	client1->start();
+
+	client1->waitForThread();
+	/*TCPSocket* s=new TCPSocket(SERVER_IP,SERVER_PORT);
 	char buffer[]="login sahar sahar";
 	int size=htonl(sizeof(buffer));
 	s->write((char*)&size, 4);
@@ -38,7 +49,7 @@ int main() {
 		break;
 
 
-	}
+	}*/
 
 
 
